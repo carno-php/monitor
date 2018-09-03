@@ -39,7 +39,7 @@ class HScanner
     public function __construct(Piping $daemon)
     {
         $this->transport = $daemon;
-        $this->identify = sprintf('p-%d', posix_getpid());
+        $this->identify = sprintf('p-%d', getmypid());
     }
 
     /**
