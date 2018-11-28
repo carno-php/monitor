@@ -55,7 +55,7 @@ class Daemon extends Program
     /**
      * @var Address
      */
-    private $exporter = null;
+    private $listener = null;
 
     /**
      * @var Address
@@ -65,14 +65,14 @@ class Daemon extends Program
     /**
      * Daemon constructor.
      * @param string $app
-     * @param Address $exporter
+     * @param Address $listener
      * @param Address $gateway
      */
-    public function __construct(string $app, Address $exporter, Address $gateway = null)
+    public function __construct(string $app, Address $listener = null, Address $gateway = null)
     {
         $this->host = gethostname();
         $this->app = $app;
-        $this->exporter = $exporter;
+        $this->listener = $listener;
         $this->gateway = $gateway;
     }
 
@@ -90,7 +90,7 @@ class Daemon extends Program
     protected function starting() : void
     {
         $this->agg = (new Aggregator($this))->start();
-        $this->out = (new Prometheus($this->host, $this->app, $this->agg))->start($this->exporter, $this->gateway);
+        $this->out = (new Prometheus($this->host, $this->app, $this->agg))->start($this->listener, $this->gateway);
         $this->cls = (new Cleaner($this))->start();
     }
 

@@ -70,15 +70,19 @@ class Prometheus
     }
 
     /**
-     * @param Address $export
-     * @param Address $gw
+     * @param Address $listen
+     * @param Address $push
      * @return static
      */
-    public function start(Address $export, Address $gw = null) : self
+    public function start(Address $listen = null, Address $push = null) : self
     {
+        if (is_null($listen)) {
+            goto GATEWAY;
+        }
+
         try {
             $this->httpd = Server::httpd(
-                $export,
+                $listen,
                 function (Connection $conn) {
                     switch ($conn->request()->getUri()->getPath()) {
                         case '/metrics':
@@ -102,19 +106,27 @@ class Prometheus
             );
         }
 
-        $gw && $gw->valid() && $this->pushd = Timer::loop(self::ACT_PUSH_INV, co(function () use ($export, $gw) {
+        GATEWAY:
+
+        if (is_null($push)) {
+            goto END;
+        }
+
+        $this->pushd = Timer::loop(self::ACT_PUSH_INV, co(function () use ($listen, $push) {
             yield $this->pushing(Client::post(
                 $this->gate = sprintf(
                     'http://%s:%d/metrics/job/%s/instance/%s',
-                    $gw->host(),
-                    $gw->port(),
+                    $push->host(),
+                    $push->port(),
                     $this->host,
-                    $export
+                    $listen ?? 'default'
                 ),
                 $this->exporting(true),
                 ['Connection' => 'keep-alive']
             ), 'pushing');
         }));
+
+        END:
 
         return $this;
     }
