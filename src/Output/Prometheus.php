@@ -81,7 +81,7 @@ class Prometheus
         }
 
         try {
-            $this->httpd = Server::httpd(
+            ($this->httpd = Server::httpd(
                 $listen,
                 function (Connection $conn) {
                     switch ($conn->request()->getUri()->getPath()) {
@@ -97,8 +97,8 @@ class Prometheus
                     }
                 },
                 'prom-exporter'
-            );
-            $this->httpd->serve();
+            ))->serve();
+            logger('monitor')->info('Prometheus exporter started', ['app' => $this->app, 'listen' => $listen]);
         } catch (Throwable $e) {
             logger('monitor')->notice(
                 'Prometheus exporter listening failed',
@@ -125,6 +125,8 @@ class Prometheus
                 ['Connection' => 'keep-alive']
             ), 'pushing');
         }));
+
+        logger('monitor')->info('Prometheus reporter started', ['app' => $this->app, 'gateway' => $push]);
 
         END:
 
